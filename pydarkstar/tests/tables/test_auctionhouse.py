@@ -1,10 +1,19 @@
 import unittest
-import logging
-logging.getLogger().setLevel(logging.DEBUG)
 
-from ...tables.auctionhouse import AuctionHouse
+import_error = False
+try:
+    from ...tables.auctionhouse import AuctionHouse
+except ImportError:
+    import_error = True
+    AuctionHouse = None
 
-class TestCase(unittest.TestCase):
+
+class TestCase00(unittest.TestCase):
+    def test_import(self):
+        self.assertFalse(import_error)
+
+
+class TestCase01(unittest.TestCase):
     def setUp(self):
         self.ah = AuctionHouse()
 
@@ -12,5 +21,4 @@ class TestCase(unittest.TestCase):
         pass
 
     def test_str(self):
-        s = str(self.ah)
-        logging.debug(s)
+        str(self.ah)

@@ -1,15 +1,28 @@
 import unittest
-import logging
-logging.getLogger().setLevel(logging.DEBUG)
-
-from ..itemlist import ItemList
-from ..item import Item
 import tempfile
 import os
 
-class TestCase(unittest.TestCase):
+import_error = False
+try:
+    from ..itemlist import ItemList
+    from ..item import Item
+except ImportError:
+    import_error = True
+    ItemList = None
+    Item = None
+
+
+class TestCase00(unittest.TestCase):
+    def test_import(self):
+        self.assertFalse(import_error)
+
+
+class TestCase01(unittest.TestCase):
     def setUp(self):
-        self.ilist = ItemList()
+        if import_error:
+            self.skipTest('ImportError')
+        else:
+            self.ilist = ItemList()
 
     def test_init(self):
         pass
@@ -45,7 +58,7 @@ class TestCase(unittest.TestCase):
         self.ilist.add(*self._test_item1)
         i, fname = tempfile.mkstemp()
         self.ilist.savecsv(fname)
-        with open(fname, 'rb') as handle:
+        with open(fname, 'rU') as handle:
             handle.readline().strip()
             handle.readline().strip()
         try:
@@ -67,9 +80,10 @@ class TestCase(unittest.TestCase):
             attr2 = getattr(ilist2.get(0), k)
             self.assertEqual(attr1, attr2)
 
-    def _get_ilist(self, text, ilist):
+    @staticmethod
+    def _get_ilist(text, ilist):
         i, fname = tempfile.mkstemp()
-        with open(fname, 'wb') as handle:
+        with open(fname, 'w') as handle:
             handle.write(text)
 
         ilist.loadcsv(fname)
@@ -80,27 +94,27 @@ class TestCase(unittest.TestCase):
 
     def test_loadcsv2(self):
         text = \
-"""
+            """
 itemid, name # comment 0
      0,    A
      2,    B
      4,    C # comment 1
-itemid, name, price01
-     6,    D,      10
+itemid, name, price01, rate01
+     6,    D,      10,    1.0
 """[1:-1]
         self._get_ilist(text, self.ilist)
         self.assertEqual(self.ilist[0].name, 'A')
         self.assertEqual(self.ilist[2].name, 'B')
         self.assertEqual(self.ilist[4].name, 'C')
         self.assertEqual(self.ilist[6].name, 'D')
-        self.assertEqual(self.ilist[0].price01,  1)
-        self.assertEqual(self.ilist[2].price01,  1)
-        self.assertEqual(self.ilist[4].price01,  1)
+        self.assertEqual(self.ilist[0].price01, 1)
+        self.assertEqual(self.ilist[2].price01, 1)
+        self.assertEqual(self.ilist[4].price01, 1)
         self.assertEqual(self.ilist[6].price01, 10)
 
     def test_loadcsv3(self):
         text = \
-"""
+            """
 itemid, price01
      0,    -1.0
 """[1:-1]
@@ -109,13 +123,13 @@ itemid, price01
 
     def test_loadcsv4(self):
         text1 = \
-"""
+            """
 itemid, name # comment 0
      0,    A
 """[1:-1]
 
         text2 = \
-"""
+            """
 itemid, name # comment 0
      1,    B
 """[1:-1]
@@ -123,7 +137,7 @@ itemid, name # comment 0
         ilist = ItemList()
 
         i, fname = tempfile.mkstemp()
-        with open(fname, 'wb') as handle:
+        with open(fname, 'w') as handle:
             handle.write(text1)
 
         ilist.loadcsv(fname)
@@ -133,7 +147,7 @@ itemid, name # comment 0
             pass
 
         i, fname = tempfile.mkstemp()
-        with open(fname, 'wb') as handle:
+        with open(fname, 'w') as handle:
             handle.write(text2)
 
         ilist.loadcsv(fname)

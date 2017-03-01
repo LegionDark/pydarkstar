@@ -1,38 +1,89 @@
 import unittest
-import logging
-logging.getLogger().setLevel(logging.DEBUG)
-
-from .. import timeutils
 import datetime
+import random
+
+import_error = False
+try:
+    from .. import timeutils
+except ImportError:
+    import_error = True
+    timeutils = None
+
+
+def randomdt(month=None, day=None, year=None, hour=None, minute=None, second=None,
+             microsecond=None, tzinfo=None, month_range=(1, 12), day_range=(1, 31),
+             year_range=(1900, 2000), hour_range=(0, 23), minute_range=(0, 59),
+             second_range=(0, 59), microsecond_range=(0, 0)):
+    """
+    Create a random datetime object.
+    """
+    if month is None:
+        month = random.randint(*month_range)
+
+    if day is None:
+        day = random.randint(*day_range)
+
+    if year is None:
+        year = random.randint(*year_range)
+
+    if hour is None:
+        hour = random.randint(*hour_range)
+
+    if minute is None:
+        minute = random.randint(*minute_range)
+
+    if second is None:
+        second = random.randint(*second_range)
+
+    if microsecond is None:
+        microsecond = random.randint(*microsecond_range)
+
+    for i in range(3):
+        try:
+            return datetime.datetime(year, month, day - i, hour, minute, second, microsecond, tzinfo)
+        except ValueError:
+            pass
+
+    return datetime.datetime(year, month, day - 3, hour, minute, second, microsecond)
+
+
+class TestCase00(unittest.TestCase):
+    def test_import(self):
+        self.assertFalse(import_error)
+
 
 class BaseTest(unittest.TestCase):
     N = 10000
+
+    def setUp(self):
+        if import_error:
+            self.skipTest('ImportError')
 
     def assertInRange(self, n, a, b):
         self.assertGreaterEqual(n, a)
         self.assertLessEqual(n, b)
 
-class TestRandomdt(BaseTest):
 
+class TestCase01(BaseTest):
     def test_construct(self):
         for i in range(self.N):
-            timeutils.randomdt()
+            randomdt()
 
     def test_range(self):
         r = (1, 2)
         for name in ('month', 'day', 'year', 'hour', 'minute', 'second', 'microsecond'):
             for i in range(10):
-                n = getattr(timeutils.randomdt(**{'{}_range'.format(name) : r}), name)
+                n = getattr(randomdt(**{'{}_range'.format(name): r}), name)
                 self.assertInRange(n, *r)
 
     def test_explicit(self):
         v = 1
         for name in ('month', 'day', 'year', 'hour', 'minute', 'second', 'microsecond'):
-            n = getattr(timeutils.randomdt(**{'{}'.format(name) : v}), name)
+            n = getattr(randomdt(**{'{}'.format(name): v}), name)
             self.assertEqual(n, v)
 
-class TestConvert_str(BaseTest):
 
+class TestCase02(BaseTest):
     def test_str_to_datetime(self):
         dobj = timeutils.str_to_datetime('1/2/1971 04:05:06')
         self.assertTrue(isinstance(dobj, datetime.datetime))
@@ -50,19 +101,19 @@ class TestConvert_str(BaseTest):
         self.assertTrue(isinstance(sobj, str))
         self.assertEqual(sobj, '01/02/1971 04:05:06')
 
-class TestConvert_timestamp(BaseTest):
 
+class TestCase03(BaseTest):
     def test_datetime_timestamp_conversion(self):
         for i in range(self.N):
-            dobj1 = timeutils.randomdt(year_range=(1971, 2015))
+            dobj1 = randomdt(year_range=(1971, 2015))
             stmp1 = timeutils.datetime_to_timestamp(dobj1)
             dobj2 = timeutils.timestamp_to_datetime(stmp1)
             stmp2 = timeutils.datetime_to_timestamp(dobj2)
             self.assertEqual(dobj1, dobj2)
             self.assertEqual(stmp1, stmp2)
 
-class TestFunc_datetime(BaseTest):
 
+class TestCase04(BaseTest):
     def test_str(self):
         dobj = timeutils.datetime('1/2/1903 04:05:06')
         self.assertTrue(isinstance(dobj, datetime.datetime))
@@ -76,7 +127,7 @@ class TestFunc_datetime(BaseTest):
 
     def test_timestamp(self):
         for i in range(self.N):
-            dobj1 = timeutils.randomdt(year_range=(1971, 2015))
+            dobj1 = randomdt(year_range=(1971, 2015))
             stmp1 = timeutils.datetime_to_timestamp(dobj1)
             dobj2 = timeutils.datetime(stmp1)
             self.assertTrue(isinstance(dobj1, datetime.datetime))
@@ -84,7 +135,7 @@ class TestFunc_datetime(BaseTest):
 
     def test_datetime(self):
         for i in range(self.N):
-            dobj1 = timeutils.randomdt()
+            dobj1 = randomdt()
             dobj2 = timeutils.datetime(dobj1)
             self.assertTrue(isinstance(dobj2, datetime.datetime))
             self.assertEqual(dobj1, dobj2)
@@ -104,8 +155,8 @@ class TestFunc_datetime(BaseTest):
         self.assertEqual(dobj.year, 1900)
         self.assertEqual(dobj.microsecond, 1)
 
-class TestFunc_timestamp(BaseTest):
 
+class TestCase05(BaseTest):
     def test_str(self):
         stmp1 = timeutils.timestamp('1/2/1971 04:05:06')
         self.assertTrue(isinstance(stmp1, float))
@@ -120,7 +171,7 @@ class TestFunc_timestamp(BaseTest):
 
     def test_timestamp(self):
         for i in range(self.N):
-            dobj1 = timeutils.randomdt(year_range=(1971, 2015))
+            dobj1 = randomdt(year_range=(1971, 2015))
             stmp1 = timeutils.datetime_to_timestamp(dobj1)
             stmp2 = timeutils.timestamp(stmp1)
             self.assertTrue(isinstance(stmp1, float))
@@ -128,7 +179,7 @@ class TestFunc_timestamp(BaseTest):
 
     def test_datetime(self):
         for i in range(self.N):
-            dobj1 = timeutils.randomdt()
+            dobj1 = randomdt()
             stmp1 = timeutils.timestamp(dobj1)
             stmp2 = timeutils.datetime_to_timestamp(dobj1)
             self.assertTrue(isinstance(stmp1, float))
@@ -143,10 +194,9 @@ class TestFunc_timestamp(BaseTest):
         self.assertEqual(dobj1.year, 1971)
 
     def test_kwargs(self):
-        stmp1 = timeutils.timestamp(1971, 1, 2, microsecond=1)
+        stmp1 = timeutils.timestamp(1971, 1, 2)
         dobj1 = timeutils.timestamp_to_datetime(stmp1)
         self.assertTrue(isinstance(dobj1, datetime.datetime))
         self.assertEqual(dobj1.month, 1)
         self.assertEqual(dobj1.day, 2)
         self.assertEqual(dobj1.year, 1971)
-        self.assertEqual(dobj1.microsecond, 1)

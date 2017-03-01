@@ -1,7 +1,39 @@
+import datetime
 import logging
 import shutil
 import os
 import re
+
+
+def create_path(*args, absolute=True, dt_fmt='%Y_%m_%d_%H_%M_%S', dt=None,
+                **kwargs):
+    """
+    Construct a path.  You can access dt or datetime as objects.
+
+    :param args: path components passed to :py:func:`os.path.join`
+    :param absolute: make path absolute
+    :param dt: datetime object
+    :param dt_fmt: date format
+    :param kwargs: variables passed to :py:func:`str.format`
+
+    :type absolute: bool
+    :type dt: :py:class:`datetime.datetime`
+    :type dt_fmt: str
+    """
+    if not dt:
+        dt = datetime.datetime.now()
+
+    dt_str = dt.strftime(dt_fmt)
+    _kwargs = dict(dt=dt, datetime=dt, date=dt_str)
+    _kwargs.update(**kwargs)
+
+    path = os.path.expanduser(os.path.join(*args).format(**_kwargs))
+
+    if absolute:
+        return os.path.abspath(path)
+
+    return path
+
 
 def backup(path, copy=False):
     """
@@ -53,10 +85,12 @@ def backup(path, copy=False):
 
     return new_path
 
-def findFiles(top, regex=r'.*', r=False, ignorecase=True, **kwargs):
+
+def find_files(top, regex=r'.*', r=False, ignorecase=True, **kwargs):
     """
     Search for files that match pattern.
 
+    :param ignorecase: ignore case in regular expression
     :param top: top level directory
     :param regex: pattern to match
     :param r: recursive search
@@ -78,6 +112,7 @@ def findFiles(top, regex=r'.*', r=False, ignorecase=True, **kwargs):
             match = regex.match(f)
             if match:
                 yield os.path.join(root, f)
+
 
 if __name__ == '__main__':
     pass

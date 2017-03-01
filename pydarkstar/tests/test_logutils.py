@@ -1,6 +1,13 @@
 import unittest
-import logging
-logging.getLogger().setLevel(logging.DEBUG)
 
-class TestCase(unittest.TestCase):
-    pass
+import_error = False
+try:
+    from .. import logutils
+except ImportError:
+    import_error = True
+    logutils = None
+
+
+class TestCase00(unittest.TestCase):
+    def test_import(self):
+        self.assertFalse(import_error)

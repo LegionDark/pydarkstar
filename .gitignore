@@ -56,12 +56,3 @@ target/
 # PyCharm
 .idea
 
-# scripts
-bin/*
-/broker.yaml
-/Last_AH-tool_Stop.log
-/scrub.yaml
-/broker.log
-/bin/scrub.yaml
-/bin/broker.yaml
-/bin/scrub.log
